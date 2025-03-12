@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  ${APP_NAME}_app:
+    image: ${REGISTRY}/${APP_GROUP}/${APP_NAME}:${APP_VERSION}
+    labels:
+      - "io.docker/group=${APP_GROUP}"
+      - "io.docker/app=${APP_NAME}"
+      - "io.docker/version=${APP_VERSION}"
+      - "io.docker/stack=${APP_STACK}"
+      - "io.docker/env=${ENV_NAME}"
+      - "io.docker/type=${APP_TYPE}"
+    environment:
+      - SPRING_PROFILES_ACTIVE=${ENV_NAME}
+    ports:
+      - "${NODE_PORT}:${CONTAINER_PORT}"
+    networks:
+      - pg_default
+      - redis_default
+      - mysql_default
+      - mongo_default
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/actuator/health"]
+      interval: 30s
+      retries: 3
+      start_period: 10s
+      timeout: 10s
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 4g
+          cpus: '2'
+    placement:
+      constraints:
+        - node.labels.type == worker    # 只部署到工作节点
+      preferences:
+        - spread: node.id      # 尝试分散在不同可用区
+      
+
+networks:
+  pg_default:
+    external: true
+  redis_default:
+    external: true
+  mysql_default:
+    external: true
+  mongo_default:
+    external: true
+

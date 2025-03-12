@@ -1,0 +1,11 @@
+groups:
+  - name: node_alerts
+    rules:
+      - alert: HighIdleCPUTime
+        expr: node_cpu_seconds_total{cpu="0",instance="node_exporter:9100",job="node",mode="idle"} > 1000000
+        for: 5s
+        labels:
+          severity: warning
+        annotations:
+          summary: "CPU Idle Time Too High"
+          description: "The idle CPU time for CPU 0 on instance node_exporter:9100 has exceeded 1,000,000 seconds."

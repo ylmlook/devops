@@ -1,0 +1,32 @@
+[ req ]
+default_bits       = 2048
+default_keyfile    = ca.key
+distinguished_name = req_distinguished_name
+req_extensions     = req_ext
+x509_extensions    = v3_ca
+
+[ req_distinguished_name ]
+countryName                 = Country Name (2 letter code)
+countryName_default         = CN
+stateOrProvinceName         = State or Province Name (full name)
+stateOrProvinceName_default = Beijing
+localityName                = Locality Name (eg, city)
+localityName_default        = Beijing
+organizationName            = Organization Name (eg, company)
+organizationName_default    = xz
+commonName                  = Common Name (e.g. server FQDN or YOUR name)
+commonName_default          = *.ai
+
+[ req_ext ]
+subjectAltName = @alt_names
+
+[ v3_ca ]
+subjectKeyIdentifier=hash
+authorityKeyIdentifier=keyid:always,issuer
+basicConstraints = critical,CA:true
+keyUsage = critical, digitalSignature, cRLSign, keyCertSign
+subjectAltName = @alt_names
+
+[ alt_names ]
+DNS.1 = *.ai
+DNS.2 = ai 

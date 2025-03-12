@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  # XXL-JOB Admin: 调度中心
+  xxl-job-admin:
+    image: registry.local:5000/xxljob:v2.2.0
+    restart: always
+    ports:
+      - "8085:80"  # XXL-JOB Admin UI
+    networks:
+      - mysql_default
+
+networks:
+  mysql_default:
+    external: true

@@ -1,0 +1,7 @@
+{
+    "tls": true,
+    "tlsverify": true,
+    "tlscacert": "/root/nginx/certs/registry.local.cert",
+    "tlscert": "/root/nginx/certs/registry.local.cert",
+    "tlskey": "/root/nginx/certs/registry.local.key"
+  }

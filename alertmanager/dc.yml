@@ -1,0 +1,22 @@
+version: '3'
+
+services:
+  alertmanager:
+    image: registry.local:5000/bitnami/alertmanager:latest
+    ports:
+      - "9093:9093"
+    environment:
+      - TZ=Asia/Shanghai
+    networks:
+      - monitor_default
+    configs:
+      - source: alertmanager-config
+        target: /etc/alertmanager/config.yml
+
+networks:
+  monitor_default:
+    external: true
+
+configs:
+  alertmanager-config:
+    file: /root/alertmanager/config.yml

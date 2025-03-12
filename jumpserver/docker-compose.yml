@@ -1,0 +1,31 @@
+version: '3'
+
+services:
+  jumpserver:
+    image: jumpserver/jms_all:latest
+    container_name: jms_all
+    privileged: true
+    ports:
+      - "80:80"
+      - "2222:2222"
+      - "30000-30100:30000-30100"
+    volumes:
+      - /opt/jumpserver/core/data:/opt/jumpserver/data
+      - /opt/jumpserver/koko/data:/opt/koko/data
+      - /opt/jumpserver/lion/data:/opt/lion/data
+      - /opt/jumpserver/kael/data:/opt/kael/data
+      - /opt/jumpserver/chen/data:/opt/chen/data
+      - /opt/jumpserver/web/log:/var/log/nginx
+    environment:
+      - SECRET_KEY=xxxxxx
+      - BOOTSTRAP_TOKEN=xxxxxx
+      - LOG_LEVEL=ERROR
+      - DB_HOST=192.168.x.x
+      - DB_PORT=3306
+      - DB_USER=jumpserver
+      - DB_PASSWORD=weakPassword
+      - DB_NAME=jumpserver
+      - REDIS_HOST=192.168.x.x
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=weakPassword
+    restart: unless-stopped

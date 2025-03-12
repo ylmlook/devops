@@ -1,0 +1,41 @@
+version: '3.8'
+services:
+  clickhouse:
+    image: registry.local:5000/bitnami/clickhouse:25
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+      - CLICKHOUSE_ADMIN_PASSWORD=g8CcxJyDbFYci7Mh6jCe
+      - CLICKHOUSE_MAX_MEMORY_USAGE=12884901888  # 12GB
+      - CLICKHOUSE_MAX_MEMORY_USAGE_FOR_USER=12884901888  # 12GB
+      - CLICKHOUSE_MAX_SERVER_MEMORY_USAGE=12884901888  # 12GB
+      - CLICKHOUSE_MAX_SERVER_MEMORY_USAGE_TO_RAM_RATIO=0.9
+      - CLICKHOUSE_MAX_BYTES_BEFORE_EXTERNAL_SORT=1073741824  # 1GB
+      - CLICKHOUSE_MAX_BYTES_BEFORE_EXTERNAL_GROUP_BY=1073741824  # 1GB
+      - CLICKHOUSE_MAX_MEMORY_USAGE_FOR_ALL_QUERIES=11811160064  # 11GB
+      - CLICKHOUSE_MEMORY_PROFILER_STEP=4194304  # 4MB
+      - CLICKHOUSE_MAX_CONCURRENT_QUERIES=100
+      - CLICKHOUSE_MAX_THREADS=8
+    ports:
+      - '8123:8123'
+      - '9000:9000'
+    volumes:
+      - clickhouse_data:/bitnami/clickhouse
+      # - /Users/liminyin/work/yx/data:/bitnami/clickhouse/data/user_files
+      # - /Users/liminyin/work/devops/clickhouse/config.xml:/opt/bitnami/clickhouse/conf/users.d/custom.xml:ro
+    deploy:
+      resources:
+        limits:
+          memory: 14G
+          cpus: '4'
+        reservations:
+          memory: 4G
+      placement:
+        constraints:
+          - node.labels.chs.role == master
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+volumes:
+  clickhouse_data:
+    driver: local

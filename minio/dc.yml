@@ -1,0 +1,14 @@
+version: "3.9"  # Or your preferred version
+
+services:
+  minio:
+    image: registry.local:5000/minio/minio
+    ports:
+      - "9007:9000"
+      - "9001:9001"
+    volumes:
+      - /data/minio_data:/data
+    environment:
+      - MINIO_ROOT_USER=root
+      - MINIO_ROOT_PASSWORD=root@123
+    command: server /data --console-address ":9001"

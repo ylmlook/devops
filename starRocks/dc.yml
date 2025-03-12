@@ -1,0 +1,30 @@
+version: '3'
+services:
+  frontend:
+    image: starrocks/starrocks-fe:latest
+    container_name: starrocks-fe
+    environment:
+      - FE_CLUSTER_ID=1
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=root
+    ports:
+      - "9030:9030"   # Frontend REST API port
+      - "3306:3306"   # MySQL client connection port
+    volumes:
+      - starrocks_fe:/var/lib/starrocks
+
+  backend:
+    image: starrocks/starrocks-be:latest
+    container_name: starrocks-be
+    environment:
+      - BE_PATH=/var/lib/starrocks
+    volumes:
+      - starrocks_be:/var/lib/starrocks
+    ports:
+      - "9050:9050"   # Backend RPC port
+
+
+volumes:
+  starrocks_fe:
+  starrocks_be:

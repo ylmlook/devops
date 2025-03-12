@@ -1,0 +1,14 @@
+version: '3.7'
+
+services:
+  gitlab-runner:
+    image: gitlab/gitlab-runner:ubuntu-162b6938
+    container_name: gitlab-runner
+    restart: always
+    environment:
+      - CI_SERVER_URL=http://192.168.1.33:9080
+      - REGISTRATION_TOKEN=glrt-1234567890
+      - RUNNER_DESCRIPTION=docker-runner
+      - RUNNER_EXECUTOR=docker
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock

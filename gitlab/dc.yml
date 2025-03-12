@@ -1,0 +1,38 @@
+version: "3.6"
+services:
+  gitlab:
+    image: gitlab/gitlab-ce:17.6.5-ce.0
+    container_name: gitlab
+    restart: always
+    hostname: 'gitlab.xz.com'
+    ports:
+      - "5222:22"
+      - "9080:9080"
+      - "9443:9443"
+    volumes:
+      - gitlab_data:/var/opt/gitlab
+      - gitlab_logs:/var/log/gitlab
+      - gitlab_config:/etc/gitlab
+    shm_size: '1024m'
+    environment:
+      GITLAB_OMNIBUS_CONFIG: "from_file('/omnibus_config.rb')"
+    configs:
+      - source: gitlab
+        target: /omnibus_config.rb
+    secrets:
+      - gitlab_root_password
+
+volumes:
+  gitlab_data:
+    driver: local
+  gitlab_logs:
+    driver: local
+  gitlab_config:
+    driver: local
+
+configs:
+  gitlab:
+    file: /root/gitlab/gitlab.rb
+secrets:
+  gitlab_root_password:
+    file: /root/gitlab/root_password.txt

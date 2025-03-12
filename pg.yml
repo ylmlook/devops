@@ -1,0 +1,40 @@
+version: "3.8"
+services:
+  # 主节点服务
+  timescaledb-master:
+    image: timescale/timescaledb:2.17.2-pg16
+    environment:
+      - POSTGRES_PASSWORD=PH0BGhrGW9NUMvHCnaGX
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+      - TIMESCALEDB_TELEMETRY=off  # 关闭 Telemetry（可选）
+      - PGPOOL_MODE=primary  # 指定为主节点
+      - PGPOOL_BACKENDS=timescaledb-replica  # 设置负载均衡
+    volumes:
+      - timescale-data-master:/var/lib/postgresql/data
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [node.db.role == manager]  # 仅在 manager 节点上运行主节点
+
+  # 从节点服务
+  timescaledb-replica:
+    image: timescale/timescaledb:2.17.2-pg16
+    environment:
+      - POSTGRES_PASSWORD=TH0BGhrGW9NUMvHCnaGY
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+      - TIMESCALEDB_REPLICATION_MODE=replica  # 启用复制模式
+      - TIMESCALEDB_MASTER_HOST=timescaledb-master  # 指定主节点的主机名
+    volumes:
+      - timescale-data-replica:/var/lib/postgresql/data
+    deploy:
+      replicas: 1  # 启动两个从节点
+      placement:
+        constraints: [node.db.role == worker]  # 仅在 worker 节点上运行从节点
+
+volumes:
+  timescale-data-master:
+    driver: local
+  timescale-data-replica:
+    driver: local

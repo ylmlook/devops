@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # Frontend (FE)
+  fe:
+    image: apache/doris:be-3.0.3
+    hostname: fe
+    networks:
+      - doris_net
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+    ports:
+      - "8030:8030"  # HTTP 接口
+      - "9030:9030"  # MySQL 端口
+    environment:
+      - FE_ENABLE=true
+    volumes:
+      - fe_data:/opt/doris/fe/meta
+    command: ["/opt/apache-doris/fe/bin/start_fe.sh"]
+
+  # Backend (BE)
+  be:
+    image: apache/doris:fe-3.0.3
+    hostname: be
+    networks:
+      - doris_net
+    deploy:
+      mode: global
+    ports:
+      - "8040:8040"
+      - "9050:9050"
+    environment:
+      - BE_ENABLE=true
+    volumes:
+      - be_data:/opt/doris/be/storage
+    command: ["/opt/apache-doris/be/bin/start_be.sh"]
+
+volumes:
+  fe_data:
+  be_data:
+
+networks:
+  doris_net:
+    driver: overlay

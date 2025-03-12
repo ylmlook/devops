@@ -1,0 +1,28 @@
+version: '3.6'
+services:
+  gitlab:
+    image: gitlab/gitlab-ce:17.6.5-ce.0
+    container_name: gitlab
+    restart: always
+    hostname: 'gitlab.tjxz.com'
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+         external_url 'http://192.168.1.33:9080'
+         gitlab_rails['gitlab_shell_ssh_port'] = 5222
+    ports:
+      - '9080:9080'
+      - '9443:9443'
+      - '5222:22'
+    volumes:
+      - 'gitlab_cm_config:/etc/gitlab'
+      - 'gitlab_cm_logs:/var/log/gitlab'
+      - 'gitlab_cm_data:/var/opt/gitlab'
+    shm_size: '2048m'
+
+volumes:
+  gitlab_cm_config:
+    driver: local
+  gitlab_cm_logs:
+    driver: local
+  gitlab_cm_data:
+    driver: local

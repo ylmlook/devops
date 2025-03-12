@@ -1,0 +1,34 @@
+services:
+  docker-fe-01:
+    image: "apache/doris:2.0.0_alpha-fe-x86_64"
+    container_name: "doris-fe-01"
+    hostname: "fe-01"
+    environment:
+      - FE_SERVERS=fe1:192.168.91.2:9010
+      - FE_ID=1
+    ports:
+      - 8031:8030
+      - 9031:9030
+    networks:
+      doris_net2:
+        ipv4_address: 192.168.91.2
+  docker-be-01:
+    image: "apache/doris:2.0.0_alpha-be-x86_64"
+    container_name: "doris-be-01"
+    hostname: "be-01"
+    depends_on:
+      - docker-fe-01
+    environment:
+      - FE_SERVERS=fe1:192.168.91.2:9010
+      - BE_ADDR=192.168.91.5:9050
+    ports:
+      - 8041:8040
+    networks:
+      doris_net2:
+        ipv4_address: 192.168.91.5
+
+networks:
+  doris_net2:
+    ipam:
+      config:
+        - subnet: 192.168.91.0/24

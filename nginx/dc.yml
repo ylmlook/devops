@@ -1,0 +1,9 @@
+version: '3'
+
+services:
+  ${APP_NAME}:
+    image: nginx:latest
+    container_name: nginx-server
+    ports:
+      - "80:80"
+      - "443:443"

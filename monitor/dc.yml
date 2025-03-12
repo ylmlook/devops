@@ -1,0 +1,41 @@
+version: '3'
+services:
+  grafana:
+    image: registry.local:5000/bitnami/grafana:11
+    ports:
+      - '3000:3000'
+    environment:
+      - 'GF_SECURITY_ADMIN_PASSWORD=bitnami'
+      - TZ=Asia/Shanghai
+    volumes:
+      - grafana_data:/opt/bitnami/grafana/data
+    restart: always  # 设置容器自动重启策略
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [node.labels.role == monitor]
+  prometheus:
+    image: registry.local:5000/bitnami/prometheus:latest
+    volumes:
+      - prometheus-persistence:/opt/bitnami/prometheus/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "9090:9090"  # 映射 Prometheus Web 界面端口
+    restart: always  # 设置容器自动重启策略
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [node.labels.role == monitor]
+
+
+volumes:
+  grafana_data:
+    driver: local
+    opts:
+      type: local
+      device: /home
+  prometheus-persistence:
+    driver: local
+    driver_opts:
+      type: local
+      device: /home

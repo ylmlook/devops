@@ -1,22 +1,28 @@
 version: '3.8'
 
 services:
-  app:
-    image: {{APP_IMAGE}}:{{APP_VERSION}}  # 指定镜像
+  {{.Values.APP_NAME}}:
+    image: {{ .Values.APP_IMAGE }}:{{ .Values.APP_VERSION }}
     labels:
-      io.docker/group: "${APP_GROUP}"        # 元数据标签
-      io.docker/app:: "${APP_NAME}"        # 元数据标签
-      io.docker/version:: "${APP_VERSION}"        # 元数据标签
-      io.docker/stack:: "${APP_STACK}"        # 元数据标签
-      io.docker/instance:: "${APP_INSTANCE}"        # 元数据标签
+      - "io.docker/group={{.Values.APP_GROUP}}"
+      - "io.docker/app={{.Values.APP_NAME}}"
+      - "io.docker/version={{.Values.APP_VERSION}}"
+      - "io.docker/stack={{.Values.APP_STACK}}"
+      - "io.docker/env={{.Values.ENV_NAME}}"
+      - "io.docker/type={{.Values.APP_TYPE}}"
     environment:
-      - SPRING_PROFILES_ACTIVE=prod     # 设置环境变量
+      - SPRING_PROFILES_ACTIVE={{.Values.ENV_NAME}}
     ports:
-      - "80"                            # 端口映射
+      {{- if .Values.NODE_PORT }}
+      - "{{.Values.NODE_PORT}}:{{.Values.CONTAINER_PORT}}"
+      {{- else }}
+      - "{{.Values.CONTAINER_PORT}}"
+      {{- end}}
     networks:
       - pg_default
       - redis_default
-      - mysql_default                    # 使用自定义网络
+      - mysql_default
+      - mongo_default
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/actuator/health"]
       interval: 30s
@@ -24,17 +30,18 @@ services:
       start_period: 10s
       timeout: 10s
     deploy:
-      replicas: 2                       # 调度3个副本
+      replicas: 2
       resources:
         limits:
-          memory: 4g                  # 内存限制
-          cpus: '2'                   # CPU 限制
-      placement:
-        constraints:
-          - node.role == worker         # 仅在 worker 节点上部署
-          - "node.labels.role != app"  # 添加反亲和度约束，避免调度到有 `app=springboot` 标签的节点
+          memory: 4g
+          cpus: '2'
       affinity:
-        - "affinity: !container: app"  # 基于标签的反亲和性约束，防止多个副本运行在相同节点
+        - "affinity: !container: io.docker/group"
+        - "affinity: !container: io.docker/app"
+        - "affinity: !container: io.docker/version"
+        - "affinity: !container: io.docker/stack"
+        - "affinity: !container: io.docker/env"
+        - "affinity: !container: io.docker/type"
 
 networks:
   pg_default:
@@ -42,5 +49,7 @@ networks:
   redis_default:
     external: true
   mysql_default:
+    external: true
+  mongo_default:
     external: true
 

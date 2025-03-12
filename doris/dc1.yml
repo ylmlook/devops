@@ -1,0 +1,43 @@
+version: "3"
+services:
+  fe:
+    image: apache/doris:fe-ubuntu-2.1.7
+    hostname: fe1
+    environment:
+     - FE_SERVERS=fe1:192.168.90.2:9010
+     - FE_ID=1
+     - PRIORITY_NETWORKS=192.168.90.0/24
+    ports:
+     - "8030:8030"
+     - "9030:9030"
+     - "9010:9010"
+    networks:
+      doris_net1:
+        ipv4_address: 192.168.90.2
+  be:
+    image: apache/doris:be-ubuntu-2.1.7
+    hostname: be1
+    environment:
+     - FE_SERVERS=fe1:192.168.90.2:9010
+     - BE_ADDR=192.168.90.5:9050
+     - BE_PORT=9050
+     - HEARTBEAT_SERVICE_PORT=9050
+     - BE_HTTP_PORT=8040
+     - BRPC_PORT=8060
+     - WEBSERVER_PORT=8040
+     - BE_PRIORITY_NETWORKS=192.168.90.0/24
+    ports:
+     - "8040:8040"
+     - "8060:8060"
+     - "9050:9050"
+    depends_on:
+      - fe
+    networks:
+      doris_net1:
+        ipv4_address: 192.168.90.5
+
+networks:
+  doris_net1:
+    ipam:
+      config:
+        - subnet: 192.168.90.0/24
