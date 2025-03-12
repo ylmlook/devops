@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  app:
+    image: {{APP_IMAGE}}:{{APP_VERSION}}  # 指定镜像
+    labels:
+      io.docker/group: "${APP_GROUP}"        # 元数据标签
+      io.docker/app:: "${APP_NAME}"        # 元数据标签
+      io.docker/version:: "${APP_VERSION}"        # 元数据标签
+      io.docker/stack:: "${APP_STACK}"        # 元数据标签
+      io.docker/instance:: "${APP_INSTANCE}"        # 元数据标签
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod     # 设置环境变量
+    ports:
+      - "80"                            # 端口映射
+    networks:
+      - pg_default
+      - redis_default
+      - mysql_default                    # 使用自定义网络
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/actuator/health"]
+      interval: 30s
+      retries: 3
+      start_period: 10s
+      timeout: 10s
+    deploy:
+      replicas: 2                       # 调度3个副本
+      resources:
+        limits:
+          memory: 4g                  # 内存限制
+          cpus: '2'                   # CPU 限制
+      placement:
+        constraints:
+          - node.role == worker         # 仅在 worker 节点上部署
+          - "node.labels.role != app"  # 添加反亲和度约束，避免调度到有 `app=springboot` 标签的节点
+      affinity:
+        - "affinity: !container: app"  # 基于标签的反亲和性约束，防止多个副本运行在相同节点
+
+networks:
+  pg_default:
+    external: true
+  redis_default:
+    external: true
+  mysql_default:
+    external: true
+
