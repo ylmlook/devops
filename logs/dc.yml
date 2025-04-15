@@ -1,6 +1,5 @@
 version: '3.8'
 
-
 services:
   loki:
     image: registry.local:5000/grafana/loki:2.9.0
@@ -10,10 +9,13 @@ services:
         target: /etc/loki/loki-config.yaml
     volumes:
       - loki-data:/loki
+      - /etc/localtime:/etc/localtime:ro
     ports:
       - "3100:3100"
     networks:
       - monitor_default
+    environment:
+      - TZ=Asia/Shanghai
     deploy:
       mode: replicated
       replicas: 1
@@ -22,9 +24,9 @@ services:
           - node.labels.log.role==manager
       resources:
         limits:
-          memory: 1G
+          memory: 8G
         reservations:
-          memory: 512M
+          memory: 8G
       restart_policy:
         condition: on-failure
 
@@ -36,9 +38,12 @@ services:
         target: /etc/promtail/promtail-config.yaml
     volumes:
       - /var/log:/var/log
+      - /var/run/docker.sock:/var/run/docker.sock
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
     networks:
       - monitor_default
+    environment:
+      - TZ=Asia/Shanghai
     deploy:
       mode: global
       resources:

@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  network-test:
+    image: alpine:latest
+    command: |
+      sh -c '
+      while true; do
+        echo "=== Network Info ==="
+        echo "monitor_default network:"
+        getent hosts tasks.network-test.monitor_default
+        echo "\nmyapp_default network:"
+        getent hosts tasks.network-test.myapp_default
+        echo "\nAll networks:"
+        ip addr show
+        sleep 10
+      done'
+    networks:
+      - monitor_default
+      - myapp_default
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=monitor_default"
+
+networks:
+  monitor_default:
+    external: true
+  myapp_default:
+    external: true 

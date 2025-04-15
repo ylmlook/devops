@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  app:
+    image: python:3.9-alpine
+    command: |
+      sh -c '
+      echo "import socket, os, time, json" > app.py
+      echo "from http.server import HTTPServer, BaseHTTPRequestHandler" >> app.py
+      echo "class Handler(BaseHTTPRequestHandler):" >> app.py
+      echo "    def do_GET(self):" >> app.py
+      echo "        networks = {}" >> app.py
+      echo "        try:" >> app.py
+      echo "            # 获取monitor_default网络IP" >> app.py
+      echo "            monitor_ip = socket.gethostbyname('tasks.app.monitor_default')" >> app.py
+      echo "            networks['monitor_default'] = monitor_ip" >> app.py
+      echo "        except: pass" >> app.py
+      echo "        try:" >> app.py
+      echo "            # 获取myapp_default网络IP" >> app.py
+      echo "            myapp_ip = socket.gethostbyname('tasks.app.myapp_default')" >> app.py
+      echo "            networks['myapp_default'] = myapp_ip" >> app.py
+      echo "        except: pass" >> app.py
+      echo "        # 获取所有网络接口信息" >> app.py
+      echo "        import netifaces" >> app.py
+      echo "        interfaces = {}" >> app.py
+      echo "        for iface in netifaces.interfaces():" >> app.py
+      echo "            addrs = netifaces.ifaddresses(iface)" >> app.py
+      echo "            if netifaces.AF_INET in addrs:" >> app.py
+      echo "                interfaces[iface] = addrs[netifaces.AF_INET]" >> app.py
+      echo "        response = {'networks': networks, 'interfaces': interfaces}" >> app.py
+      echo "        self.send_response(200)" >> app.py
+      echo "        self.send_header('Content-type', 'application/json')" >> app.py
+      echo "        self.end_headers()" >> app.py
+      echo "        self.wfile.write(json.dumps(response, indent=2).encode())" >> app.py
+      echo "server = HTTPServer(('0.0.0.0', 8080), Handler)" >> app.py
+      echo "print('Starting server...')" >> app.py
+      echo "server.serve_forever()" >> app.py
+      pip install netifaces
+      python app.py'
+    networks:
+      - monitor_default
+      - myapp_default
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=monitor_default"
+        - "traefik.http.routers.app.rule=PathPrefix(`/network-info`)"
+        - "traefik.http.services.app.loadbalancer.server.port=8080"
+
+networks:
+  monitor_default:
+    external: true
+  myapp_default:
+    external: true 

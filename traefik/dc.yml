@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  traefik:
+    image: registry.local:5000/traefik:v2.10
+    command:
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.swarmMode=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=myapp_default"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.gateway.address=:8080"  # 添加 gateway entryPoint
+      - "--providers.docker.defaultRule=Host(`{{ normalize .Name }}`)"
+      - "--providers.docker.useBindPortIP=true"
+      - "--providers.docker.endpoint=unix:///var/run/docker.sock"
+    ports:
+      - "18888:80"     # web entryPoint
+      - "18080:8080"   # gateway entryPoint
+      - "19999:8080"   # Dashboard端口
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - myapp_default
+      - monitor_default
+    deploy:
+      mode: replicated
+      replicas: 1
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.dashboard.rule=PathPrefix(`/`)"
+        - "traefik.http.routers.dashboard.service=api@internal"
+        - "traefik.http.routers.dashboard.entrypoints=web"
+        - "traefik.http.services.traefik-traefik.loadbalancer.server.port=8080"
+
+networks:
+  myapp_default:
+    external: true
+  monitor_default:
+    external: true

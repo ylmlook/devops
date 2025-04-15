@@ -3,6 +3,11 @@ auth_enabled: false
 server:
   http_listen_port: 3100
   grpc_listen_port: 9096
+  grpc_server_max_recv_msg_size: 104857600  # 100MB
+  grpc_server_max_send_msg_size: 104857600  # 100MB
+  http_server_read_timeout: 300s
+  http_server_write_timeout: 300s
+  log_level: debug
 
 common:
   path_prefix: /loki
@@ -32,7 +37,15 @@ ruler:
 limits_config:
   enforce_metric_name: false
   reject_old_samples: false
-  # reject_old_samples_max_age: 720h  # 禁用拒绝旧样本
+  max_line_size: 8388608             # 8MB (原16MB)
+  per_stream_rate_limit: 52428800    # 50MB/s (原100MB/s)
+  per_stream_rate_limit_burst: 52428800  # 50MB (原100MB)
+  ingestion_rate_mb: 50              # 原100
+  ingestion_burst_size_mb: 100       # 原200
+  max_streams_per_user: 50000        # 原100000
+  max_chunks_per_query: 1000000      # 原2000000
+  max_query_series: 250000           # 原500000
+  reject_old_samples_max_age: 4320h  # 保留180天
 
 compactor:
   working_directory: /loki/compactor
@@ -40,12 +53,43 @@ compactor:
   compaction_interval: 5m
   retention_enabled: true
   retention_delete_delay: 2h
-  retention_delete_worker_count: 150
+  retention_delete_worker_count: 30  # 原150
+
 
 query_range:
   results_cache:
     cache:
       enable_fifocache: true
       fifocache:
-        max_size_items: 1024
+        max_size_items: 512          # 原1024
         ttl: 24h
+
+ingester:
+  lifecycler:
+    ring:
+      replication_factor: 1
+  chunk_idle_period: 5m
+  max_transfer_retries: 0
+  chunk_target_size: 1048576         # 1MB (原1.5MB)
+  chunk_block_size: 131072           # 128KB (原256KB)
+  max_chunk_age: 1h                  # 原2h
+  wal:
+    enabled: true
+    dir: /loki/wal
+
+
+# 添加缓存配置
+chunk_store_config:
+  max_look_back_period: 336h         # 14天
+  chunk_cache_config:
+    enable_fifocache: true
+    fifocache:
+      max_size_items: 500            # 缓存项数量
+      validity: 24h
+
+frontend:
+  max_outstanding_per_tenant: 100    # 减少每个租户的未完成请求数
+  compress_responses: true
+  
+frontend_worker:
+  parallelism: 2                    # 减少并行处理的请求数

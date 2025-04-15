@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  app:
+    image: your-image:tag
+    entrypoint: ["/app/docker-entrypoint.sh"]
+    command: ["node", "app.js"]
+    networks:
+      - monitor_default
+    volumes:
+      - ./docker-entrypoint.sh:/app/docker-entrypoint.sh:ro
+      - app-data:/app
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=monitor_default"
+
+networks:
+  monitor_default:
+    external: true
+
+volumes:
+  app-data: 

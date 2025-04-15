@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  app:
+    image: your-image:tag
+    command: |
+      sh -c '
+      # 获取当前容器在指定网络中的IP
+      export CONTAINER_IP=$$(getent hosts tasks.tjxz-backend-admin_tjxz-backend-admin_app.monitor_default | awk "{print \$$1}" | grep -Fx "$$(cat /etc/hosts | grep -v "^#" | awk "{print \$$1}")")
+      
+      # 将IP写入环境文件
+      echo "CONTAINER_IP=$$CONTAINER_IP" > /app/.env
+      
+      # 输出确认
+      echo "Container IP: $$CONTAINER_IP"
+      
+      # 启动应用（替换为实际的启动命令）
+      exec node app.js'
+    networks:
+      - monitor_default
+    volumes:
+      - app-data:/app
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=monitor_default"
+
+networks:
+  monitor_default:
+    external: true
+
+volumes:
+  app-data: 

@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  network-inspector:
+    image: nicolaka/netshoot
+    command: |
+      sh -c '
+      while true; do
+        echo "\n=== Network Interfaces ==="
+        ip -4 addr show
+
+        echo "\n=== DNS Resolution ==="
+        echo "monitor_default network:"
+        dig +short network-inspector.monitor_default
+        echo "\nmyapp_default network:"
+        dig +short network-inspector.myapp_default
+
+        echo "\n=== Network Connectivity Test ==="
+        for network in monitor_default myapp_default; do
+          echo "\nTesting $network:"
+          ip=$(getent hosts tasks.network-inspector.$network | awk "{print \$1}" | head -n1)
+          if [ ! -z "$ip" ]; then
+            echo "IP for $network: $ip"
+            curl -m 1 -s http://$ip:8080 || echo "Service not reachable on $ip"
+          else
+            echo "Could not resolve IP for $network"
+          fi
+        done
+
+        sleep 30
+      done'
+    networks:
+      - monitor_default
+      - myapp_default
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=monitor_default"
+
+networks:
+  monitor_default:
+    external: true
+  myapp_default:
+    external: true 

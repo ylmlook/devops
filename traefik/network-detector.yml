@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  network-detector:
+    image: alpine:latest
+    command: |
+      sh -c '
+      apk add --no-cache iproute2 bind-tools
+      while true; do
+        echo "\n========== $(date) =========="
+        echo "Container ID: $(hostname)"
+        
+        # 获取所有服务实例的IP
+        echo "\nAll Service IPs (monitor_default):"
+        getent hosts tasks.network-detector_network-detector.monitor_default || echo "Not found"
+        echo "\nAll Service IPs (myapp_default):"
+        getent hosts tasks.network-detector_network-detector.myapp_default || echo "Not found"
+        
+        echo "\nNetwork Interface Details:"
+        for iface in $(ls /sys/class/net/ | grep -v lo); do
+          echo "\n=== Interface: $iface ==="
+          # IP地址
+          ip=$(ip -4 addr show $iface | grep inet | awk "{print \$2}" | cut -d/ -f1)
+          echo "IP Address: $ip"
+          
+          # 子网信息
+          subnet=$(ip -4 route | grep $iface | grep -v default | awk "{print \$1}")
+          echo "Subnet: $subnet"
+          
+          # 尝试解析网络名称
+          if [[ $subnet == "172."* ]]; then
+            if ip -4 route | grep $iface | grep -q "monitor_default"; then
+              echo "Network Name: monitor_default"
+            elif ip -4 route | grep $iface | grep -q "myapp_default"; then
+              echo "Network Name: myapp_default"
+            fi
+          fi
+          
+          # 路由信息
+          echo "Routes for $iface:"
+          ip -4 route | grep $iface
+        done
+        
+        echo "\nDNS Resolution Test:"
+        for network in monitor_default myapp_default; do
+          echo "\nTrying to resolve in $network:"
+          dig +short network-detector_network-detector.$network || echo "Resolution failed"
+        done
+        
+        sleep 30
+      done'
+    networks:
+      - monitor_default
+      - myapp_default
+    deploy:
+      mode: replicated
+      replicas: 2
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=monitor_default"
+
+networks:
+  monitor_default:
+    external: true
+  myapp_default:
+    external: true 

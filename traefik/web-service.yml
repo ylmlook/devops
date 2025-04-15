@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  webapp:
+    image: nginx:alpine
+    networks:
+      - myapp_default
+      - monitor_default
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.${CONTEXT}.rule=PathPrefix(`/${CONTEXT}`)"
+        - "traefik.http.services.${CONTEXT}.loadbalancer.server.port=80"
+        - "traefik.http.routers.${CONTEXT}.entrypoints=${CONTEXT}"
+        - "traefik.docker.network=monitor_default"
+        - "traefik.http.middlewares.strip-${CONTEXT}.stripprefix.prefixes=/${CONTEXT}"
+        - "traefik.http.middlewares.change-host-${CONTEXT}.headers.customrequestheaders.Host=${CONTEXT}.com"
+        - "traefik.http.routers.webapp.middlewares=strip-${CONTEXT},change-host-${CONTEXT}"
+
+  # 另一个服务示例：带路径前缀的 API 服务
+  api:
+    image: node:alpine
+    command: ["npm", "start"]
+    networks:
+      - myapp_default
+      - monitor_default
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=monitor_default"  # 指定 Traefik 使用的网络
+        - "traefik.http.routers.api.rule=PathPrefix(`/api`)"
+        - "traefik.http.services.api.loadbalancer.server.port=3000"
+        - "traefik.http.routers.api.entrypoints=web"
+        # 路径去除中间件
+        - "traefik.http.middlewares.strip-api.stripprefix.prefixes=/api"
+        # Host修改中间件
+        - "traefik.http.middlewares.change-host-api.headers.customrequestheaders.Host=node-3"
+        # 使用多个中间件
+        - "traefik.http.routers.api.middlewares=strip-api,change-host-api"
+
+  # 带有多个规则的服务示例
+  admin:
+    image: nginx:alpine
+    networks:
+      - myapp_default
+      - monitor_default
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=monitor_default"  # 指定 Traefik 使用的网络
+        - "traefik.http.routers.admin.rule=PathPrefix(`/admin`)"
+        - "traefik.http.services.admin.loadbalancer.server.port=80"
+        - "traefik.http.routers.admin.entrypoints=web"
+        # 路径去除中间件
+        - "traefik.http.middlewares.strip-admin.stripprefix.prefixes=/admin"
+        # Host修改中间件
+        - "traefik.http.middlewares.change-host-admin.headers.customrequestheaders.Host=node-3"
+        # 使用多个中间件
+        - "traefik.http.routers.admin.middlewares=strip-admin,change-host-admin"
+
+networks:
+  myapp_default:
+    external: true
+  monitor_default:
+    external: true 

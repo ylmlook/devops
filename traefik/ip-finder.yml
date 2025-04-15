@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  ip-finder:
+    image: alpine:latest
+    command: |
+      sh -c '
+      while true; do
+        echo "=== Container Info ==="
+        echo "Container ID: $(hostname)"
+        
+        echo "\n=== Network Interfaces ==="
+        for iface in $(ls /sys/class/net/); do
+          if [ "$iface" != "lo" ]; then
+            echo "\nInterface: $iface"
+            echo "IP Address: $(ip -4 addr show $iface | grep inet | awk "{print \$2}" | cut -d/ -f1)"
+            echo "Network: $(ip -4 route | grep $iface | grep -v default | awk "{print \$1}")"
+          fi
+        done
+        
+        echo "\n=== All Service IPs ==="
+        getent hosts tasks.ip-finder_ip-finder.monitor_default
+        
+        echo "\n=== Current Instance Info ==="
+        CONTAINER_ID=$(hostname)
+        CURRENT_IPS=$(ip -4 addr show | grep inet | awk "{print \$2}" | cut -d/ -f1 | grep -v "127.0.0.1")
+        echo "Current Container IPs: $CURRENT_IPS"
+        
+        sleep 10
+      done'
+    networks:
+      - monitor_default
+      - myapp_default
+    deploy:
+      mode: replicated
+      replicas: 2
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=monitor_default"
+
+networks:
+  monitor_default:
+    external: true
+  myapp_default:
+    external: true 

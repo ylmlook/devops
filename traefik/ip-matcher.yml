@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  ip-matcher:
+    image: alpine:latest
+    command: |
+      sh -c '
+      while true; do
+        echo "\n========== $(date) =========="
+        echo "Container ID: $(hostname)"
+        
+        echo "\n=== All Service IPs ==="
+        getent hosts tasks.ip-matcher_ip-matcher.monitor_default | tee /tmp/all_ips.txt
+        
+        echo "\n=== Local hosts file ==="
+        cat /etc/hosts | tee /tmp/local_hosts.txt
+        
+        echo "\n=== Finding common IPs ==="
+        echo "Method 1 (using comm):"
+        comm -12 <(getent hosts tasks.ip-matcher_ip-matcher.monitor_default | awk "{print \$1}" | sort) <(cat /etc/hosts | grep -v "^#" | awk "{print \$1}" | sort -u)
+        
+        echo "\nMethod 2 (using grep):"
+        for ip in $(getent hosts tasks.ip-matcher_ip-matcher.monitor_default | awk "{print \$1}"); do
+          if grep -q "^$ip[[:space:]]" /etc/hosts; then
+            echo "Found matching IP: $ip"
+          fi
+        done
+        
+        echo "\n=== Current container network info ==="
+        for iface in $(ls /sys/class/net/ | grep -v lo); do
+          echo "\nInterface: $iface"
+          ip -4 addr show $iface | grep inet
+        done
+        
+        sleep 30
+      done'
+    networks:
+      - monitor_default
+      - myapp_default
+    deploy:
+      mode: replicated
+      replicas: 2
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=monitor_default"
+
+networks:
+  monitor_default:
+    external: true
+  myapp_default:
+    external: true 
